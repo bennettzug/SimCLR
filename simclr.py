@@ -64,7 +64,7 @@ class SimCLR(object):
         labels = []
 
         with torch.no_grad():
-            for images, targets in data_loader:
+            for images, targets in tqdm(data_loader):
                 img = images[0].to(self.args.device)
 
                 with autocast(enabled=self.args.fp16_precision):

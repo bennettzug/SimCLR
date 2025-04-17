@@ -5,9 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "matplotlib>=3.10.1",
+    "mkl>=2025.1.0",
+    "opentsne>=1.0.2",
     "pyyaml>=6.0.2",
+    "scikit-learn>=1.6.1",
+    "standard-imghdr>=3.13.0",
     "tensorboard>=2.19.0",
     "torch>=2.6.0",
     "torchvision>=0.21.0",
     "tqdm>=4.67.1",
+    "tsnecuda>=3.0.1",
 ]

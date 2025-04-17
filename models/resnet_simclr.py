@@ -8,8 +8,8 @@ class ResNetSimCLR(nn.Module):
     def __init__(self, base_model, out_dim):
         super(ResNetSimCLR, self).__init__()
         self.resnet_dict = {
-            "resnet18": models.resnet18(pretrained=False, num_classes=out_dim),
-            "resnet50": models.resnet50(pretrained=False, num_classes=out_dim),
+            "resnet18": models.resnet18(num_classes=out_dim),
+            "resnet50": models.resnet50(num_classes=out_dim),
         }
 
         self.backbone = self._get_basemodel(base_model)
