@@ -1,6 +1,7 @@
 import logging
 import os
 
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.cuda.amp import GradScaler, autocast
@@ -21,6 +22,11 @@ class SimCLR(object):
         self.writer = SummaryWriter()
         logging.basicConfig(filename=os.path.join(self.writer.log_dir, "training.log"), level=logging.DEBUG)
         self.criterion = torch.nn.CrossEntropyLoss().to(self.args.device)
+
+        # create a directory for embeddings
+        self.embeddings_dir = os.path.join(self.writer.log_dir, "embeddings")
+        if not os.path.exists(self.embeddings_dir):
+            os.makedirs(self.embeddings_dir)
 
     def info_nce_loss(self, features):
         labels = torch.cat([torch.arange(self.args.batch_size) for i in range(self.args.n_views)], dim=0)
@@ -52,6 +58,26 @@ class SimCLR(object):
         logits = logits / self.args.temperature
         return logits, labels
 
+    def extract_embeddings(self, data_loader):
+        self.model.eval()
+        embeddings = []
+        labels = []
+
+        with torch.no_grad():
+            for images, targets in data_loader:
+                img = images[0].to(self.args.device)
+
+                with autocast(enabled=self.args.fp16_precision):
+                    features = self.model(img)
+                    features = F.normalize(features, dim=1)
+
+                embeddings.append(features.cpu().numpy())
+                labels.append(targets.numpy())
+        embeddings = np.vstack(embeddings)
+        labels = np.concatenate(labels)
+
+        return embeddings, labels
+
     def train(self, train_loader):
         scaler = GradScaler(enabled=self.args.fp16_precision)
 
@@ -63,6 +89,8 @@ class SimCLR(object):
         logging.info(f"Training with gpu: {self.args.disable_cuda}.")
 
         for epoch_counter in range(self.args.epochs):
+            self.model.train()
+
             for images, _ in tqdm(train_loader):
                 images = torch.cat(images, dim=0)
 
@@ -93,6 +121,17 @@ class SimCLR(object):
             if epoch_counter >= 10:
                 self.scheduler.step()
             logging.debug(f"Epoch: {epoch_counter}\tLoss: {loss}\tTop1 accuracy: {top1[0]}")
+            if (
+                (epoch_counter + 1) % self.args.save_embeddings_every_n_epochs == 0
+                or epoch_counter == 0
+                or epoch_counter == self.args.epochs - 1
+            ):
+                logging.info(f"Extracting and saving embeddings for epoch {epoch_counter + 1}")
+                embeddings, labels = self.extract_embeddings(train_loader)
+
+                embedding_path = os.path.join(self.embeddings_dir, f"embeddings_epoch_{epoch_counter + 1}.npz")
+                np.savez(embedding_path, embeddings=embeddings, labels=labels)
+                logging.info(f"Embeddings saved to {embedding_path}")
 
         logging.info("Training has finished.")
         # save model checkpoints

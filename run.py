@@ -57,6 +57,7 @@ parser.add_argument(
 
 parser.add_argument("--out_dim", default=128, type=int, help="feature dimension (default: 128)")
 parser.add_argument("--log-every-n-steps", default=100, type=int, help="Log every n steps")
+parser.add_argument("--save-embeddings-every-n-epochs", default=5, type=int, help="Save embeddings every n epochs")
 parser.add_argument("--temperature", default=0.07, type=float, help="softmax temperature (default: 0.07)")
 parser.add_argument(
     "--n-views", default=2, type=int, metavar="N", help="Number of views for contrastive learning training."
