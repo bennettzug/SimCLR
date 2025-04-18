@@ -155,7 +155,7 @@ class SimCLR(object):
                 logging.info(f"Unlabeled embeddings saved to {embedding_path}")
 
                 # labeled
-                labeled_embeddings, labeled_labels = self.extract_embeddings(labeled_loader)
+                labeled_embeddings, labeled_labels = self.extract_labelled_embeddings(labeled_loader)
                 labeled_embedding_path = os.path.join(
                     self.embeddings_dir, f"labeled_embeddings_epoch_{epoch_counter + 1}.npz"
                 )
