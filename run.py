@@ -2,7 +2,7 @@ import argparse
 
 import torch
 import torch.backends.cudnn as cudnn
-from torchvision import models
+from torchvision import datasets, models
 
 from data_aug.contrastive_learning_dataset import ContrastiveLearningDataset
 from models.resnet_simclr import ResNetSimCLR
@@ -65,6 +65,25 @@ parser.add_argument(
 parser.add_argument("--gpu-index", default=0, type=int, help="Gpu index.")
 
 
+def get_labeled_dataset(name, root_folder):
+    if name == "stl10":
+        return datasets.STL10(
+            root_folder,
+            split="train",
+            transform=ContrastiveLearningDataset.get_simclr_pipeline_transform(96),
+            download=True,
+        )
+    elif name == "cifar10":
+        return datasets.CIFAR10(
+            root_folder,
+            train=True,
+            transform=ContrastiveLearningDataset.get_simclr_pipeline_transform(32),
+            download=True,
+        )
+    else:
+        raise ValueError(f"Unsupported dataset: {name}")
+
+
 def main():
     args = parser.parse_args()
     assert args.n_views == 2, "Only two view training is supported. Please use --n-views 2."
@@ -90,6 +109,16 @@ def main():
         drop_last=True,
     )
 
+    labeled_dataset = get_labeled_dataset(args.dataset_name, args.data)
+    labeled_loader = torch.utils.data.DataLoader(
+        labeled_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.workers,
+        pin_memory=True,
+        drop_last=False,
+    )
+
     model = ResNetSimCLR(base_model=args.arch, out_dim=args.out_dim)
 
     optimizer = torch.optim.Adam(model.parameters(), args.lr, weight_decay=args.weight_decay)
@@ -99,7 +128,7 @@ def main():
     #  It’s a no-op if the 'gpu_index' argument is a negative integer or None.
     with torch.cuda.device(args.gpu_index):
         simclr = SimCLR(model=model, optimizer=optimizer, scheduler=scheduler, args=args)
-        simclr.train(train_loader)
+        simclr.train(train_loader, labeled_loader)
 
 
 if __name__ == "__main__":

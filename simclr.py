@@ -64,7 +64,7 @@ class SimCLR(object):
         labels = []
 
         with torch.no_grad():
-            for images, targets in tqdm(data_loader):
+            for images, targets in tqdm(data_loader, desc="Extracting embeddings"):
                 img = images[0].to(self.args.device)
 
                 with autocast(enabled=self.args.fp16_precision):
@@ -78,7 +78,27 @@ class SimCLR(object):
 
         return embeddings, labels
 
-    def train(self, train_loader):
+    def extract_labelled_embeddings(self, data_loader):
+        self.model.eval()
+        embeddings = []
+        labels = []
+
+        with torch.no_grad():
+            for images, targets in tqdm(data_loader, desc="Extracting labelled embeddings"):
+                img = images.to(self.args.device)
+
+                with autocast(enabled=self.args.fp16_precision):
+                    features = self.model(img)
+                    features = F.normalize(features, dim=1)
+
+                embeddings.append(features.cpu().numpy())
+                labels.append(targets.numpy())
+        embeddings = np.vstack(embeddings)
+        labels = np.concatenate(labels)
+
+        return embeddings, labels
+
+    def train(self, train_loader, labeled_loader):
         scaler = GradScaler(enabled=self.args.fp16_precision)
 
         # save config file
@@ -127,11 +147,20 @@ class SimCLR(object):
                 or epoch_counter == self.args.epochs - 1
             ):
                 logging.info(f"Extracting and saving embeddings for epoch {epoch_counter + 1}")
-                embeddings, labels = self.extract_embeddings(train_loader)
 
+                # unlabeled
+                embeddings, labels = self.extract_embeddings(train_loader)
                 embedding_path = os.path.join(self.embeddings_dir, f"embeddings_epoch_{epoch_counter + 1}.npz")
                 np.savez(embedding_path, embeddings=embeddings, labels=labels)
-                logging.info(f"Embeddings saved to {embedding_path}")
+                logging.info(f"Unlabeled embeddings saved to {embedding_path}")
+
+                # labeled
+                labeled_embeddings, labeled_labels = self.extract_embeddings(labeled_loader)
+                labeled_embedding_path = os.path.join(
+                    self.embeddings_dir, f"labeled_embeddings_epoch_{epoch_counter + 1}.npz"
+                )
+                np.savez(labeled_embedding_path, embeddings=labeled_embeddings, labels=labeled_labels)
+                logging.info(f"Labeled embeddings saved to {labeled_embedding_path}")
 
         logging.info("Training has finished.")
         # save model checkpoints
