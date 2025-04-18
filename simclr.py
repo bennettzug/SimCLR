@@ -78,13 +78,13 @@ class SimCLR(object):
 
         return embeddings, labels
 
-    def extract_labelled_embeddings(self, data_loader):
+    def extract_labeled_embeddings(self, data_loader):
         self.model.eval()
         embeddings = []
         labels = []
 
         with torch.no_grad():
-            for images, targets in tqdm(data_loader, desc="Extracting labelled embeddings"):
+            for images, targets in tqdm(data_loader, desc="Extracting labeled embeddings"):
                 img = images.to(self.args.device)
 
                 with autocast(enabled=self.args.fp16_precision):
@@ -155,7 +155,7 @@ class SimCLR(object):
                 logging.info(f"Unlabeled embeddings saved to {embedding_path}")
 
                 # labeled
-                labeled_embeddings, labeled_labels = self.extract_embeddings(labeled_loader)
+                labeled_embeddings, labeled_labels = self.extract_labeled_embeddings(labeled_loader)
                 labeled_embedding_path = os.path.join(
                     self.embeddings_dir, f"labeled_embeddings_epoch_{epoch_counter + 1}.npz"
                 )
