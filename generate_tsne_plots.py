@@ -106,17 +106,14 @@ def main():
         class_names = None
 
     embeddings_dir = os.path.join(args.log_dir, "embeddings")
-    embedding_files = sorted(glob.glob(os.path.join(embeddings_dir, "embeddings_epoch_*.npz")))
 
-    labeled_embeddings_dir = os.path.join(args.log_dir, "labeled_embeddings")
-    labeled_embedding_files = sorted(glob.glob(os.path.join(labeled_embeddings_dir, "embeddings_epoch_*.npz")))
+    embedding_files = sorted(glob.glob(os.path.join(embeddings_dir, "embeddings_epoch_*.npz")))
+    labeled_embedding_files = sorted(glob.glob(os.path.join(embeddings_dir, "labeled_embeddings_epoch_*.npz")))
 
     embedding_files_to_use = labeled_embedding_files if labeled_embedding_files else embedding_files
     embedding_type = "labeled" if labeled_embedding_files else "unlabeled"
 
-    print(
-        f"Found {len(embedding_files_to_use)} {embedding_type} embedding files in {labeled_embeddings_dir if labeled_embedding_files else embeddings_dir}"
-    )
+    print(f"Found {len(embedding_files_to_use)} {embedding_type} embedding files in {embeddings_dir}")
 
     for file_path in tqdm(embedding_files_to_use, desc=f"Generating t-SNE plots ({embedding_type})"):
         epoch = int(os.path.basename(file_path).split("_")[-1].split(".")[0])
