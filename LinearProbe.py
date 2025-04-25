@@ -47,7 +47,7 @@ def extract_features(loader, model, device):
 
     features = torch.cat(features, dim=0)
     labels = torch.cat(labels, dim=0)
-
+    print(f"Feature shape after extraction: {feature_vectors.shape}")
     return features, labels
 
 
@@ -73,7 +73,7 @@ def main():
     parser = argparse.ArgumentParser(description="Linear Probe Evaluation for SimCLR")
     parser.add_argument("--checkpoint", type=str, required=True, help="path to model checkpoint")
     parser.add_argument("--data", type=str, default="./datasets", help="path to dataset")
-    parser.add_argument("--dataset-name", default="cifar10", choices=["stl10", "cifar10"], help="dataset name")
+    parser.add_argument("--dataset-name", default="stl10", choices=["stl10", "cifar10"], help="dataset name")
     parser.add_argument("--batch-size", default=256, type=int, help="batch size")
     parser.add_argument("--workers", default=4, type=int, help="number of data loading workers")
     parser.add_argument("--epochs", default=100, type=int, help="number of epochs for linear probe training")
@@ -161,6 +161,10 @@ def main():
 
     print("Extracting features from the test set...")
     test_features, test_labels = extract_features(test_loader, model, device)
+
+    print(f"Train features shape: {train_features.shape}")
+    print(f"Validation features shape: {val_features.shape}")
+    print(f"Test features shape: {test_features.shape}")
 
     # Create and train the linear probe model
     probe_model = LinearProbe(feature_dim, num_classes).to(device)
