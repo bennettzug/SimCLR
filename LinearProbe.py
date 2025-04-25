@@ -166,8 +166,13 @@ def main():
     print(f"Validation features shape: {val_features.shape}")
     print(f"Test features shape: {test_features.shape}")
 
+    print(f"Unique train labels: {torch.unique(train_labels)}")
+    print(f"Unique validation labels: {torch.unique(val_labels)}")
+    print(f"Unique test labels: {torch.unique(test_labels)}")
+    print(f"Number of classes in linear probe: {num_classes}")
     # Create and train the linear probe model
     probe_model = LinearProbe(feature_dim, num_classes).to(device)
+    print(f"Linear probe input dimension: {probe_model.classifier.in_features}")
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(probe_model.parameters(), lr=args.lr)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="max", factor=0.1, patience=5)
