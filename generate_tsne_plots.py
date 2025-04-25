@@ -4,14 +4,14 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from openTSNE import TSNE
 from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
 from tqdm import tqdm
 
 
 def plot_tsne(embeddings, labels, epoch, output_dir, perplexity=30, use_kmeans=False, n_clusters=10, class_names=None):
     tsne = TSNE(n_components=2, perplexity=perplexity)
-    embeddings_2d = tsne.fit(embeddings)
+    embeddings_2d = tsne.fit_transform(embeddings)
 
     plt.figure(figsize=(10, 8))
 
